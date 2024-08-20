@@ -23,7 +23,7 @@ This node supports several parameters to adapt to different LiDAR models and ins
 - `x_diff_from_rear_lidar_to_front_lidar` (default: 0.49): The distance between the rear and front LiDAR in the x-axis.
 - `y_diff_from_rear_lidar_to_front_lidar` (default: -0.73): The distance between the rear and front LiDAR in the y-axis.
 
-The default values are set for the [SLAMTEC LPX-T1] LiDAR sensors when installed reversely on a robot facing 315 degrees bearing and 135 degrees bearing each.
+The default values are set for the [SLAMTEC LPX-T1] LiDAR sensors when they are installed in reverse on a robot facing a heading of 315 degrees and a heading of 135 degrees, respectively.
 
 ## Topics
 
