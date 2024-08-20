@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `LidarMerger` node is designed to merge scan data from two LiDAR sensors (front and rear) into a single cohesive scan message in ROS2.
+The `LidarMerger` node is designed to merge scan data from two LiDAR sensors (front and rear) into a single cohesive scan message in ROS2. This package is tested on ROS2 humble.
 
 ## Features
 
