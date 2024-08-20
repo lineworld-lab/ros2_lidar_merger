@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `LidarMerger` node is designed to merge scan data from two LiDAR sensors (front and rear) into a single cohesive scan message in ROS2. This package is tested on ROS2 humble.
+The `LidarMerger` node is designed to merge scan data from two 2D LiDAR sensors (front and rear) into a single cohesive scan message in ROS2. This package is tested on ROS2 humble.
 
 ## Features
 
@@ -16,8 +16,8 @@ The `LidarMerger` node is designed to merge scan data from two LiDAR sensors (fr
 This node supports several parameters to adapt to different LiDAR models and installation configurations:
 
 - `scan_data_length` (default: 6120): The length of the scan data array returned by the LiDAR.
-- `front_lidar_offset` (default: 1.0/4.0 * M_PI): The offset of the front LiDAR in radians.
-- `rear_lidar_offset` (default: 3.0/4.0 * M_PI): The offset of the rear LiDAR in radians.
+- `front_lidar_offset` (default: 1.0/4.0 * M_PI): The heading offset of the front LiDAR in radians.
+- `rear_lidar_offset` (default: 3.0/4.0 * M_PI): The heading offset of the rear LiDAR in radians.
 - `lidar_installed_reversely` (default: true): Indicates if the rear LiDAR is installed in reverse.
 - `lidar_scan_data_direction` (default: true): Direction of the scan data array from LiDAR. True is clockwise(top-viewed).
 - `x_diff_from_rear_lidar_to_front_lidar` (default: 0.49): The distance between the rear and front LiDAR in the x-axis.
