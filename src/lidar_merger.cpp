@@ -7,109 +7,117 @@ class LidarMerger : public rclcpp::Node
         LidarMerger()
         : Node("lidar_merger")
         {
-            // Default values of the parameters are set for the LiDAR model "SLAMTEC LPX-T1"
-            auto scan_data_length_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            scan_data_length_descriptor.description = "The length of scan data array that LiDAR returns";
-            this->declare_parameter("scan_data_length", 6120, scan_data_length_descriptor);
+            auto first_lidar_yaw_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
+            first_lidar_yaw_descriptor.description = "The yaw angle of the first LiDAR";
+            this->declare_parameter("first_lidar_yaw", rclcpp::PARAMETER_DOUBLE, first_lidar_yaw_descriptor);
 
-            auto front_lidar_offset_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            front_lidar_offset_descriptor.description = "The offset of the front LiDAR in radians (positive is counter-clockwise)";
-            this->declare_parameter("front_lidar_offset", 1.0/4.0 * M_PI, front_lidar_offset_descriptor);
+            auto second_lidar_yaw_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
+            second_lidar_yaw_descriptor.description = "The yaw angle of the second LiDAR";
+            this->declare_parameter("second_lidar_yaw", rclcpp::PARAMETER_DOUBLE, second_lidar_yaw_descriptor);
 
-            auto rear_lidar_offset_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            rear_lidar_offset_descriptor.description = "The offset of the rear LiDAR in radians (positive is counter-clockwise)";
-            this->declare_parameter("rear_lidar_offset", 3.0/4.0 * M_PI, rear_lidar_offset_descriptor);
+            auto x_diff_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
+            x_diff_descriptor.description = "The distance between the second LiDAR and the first LiDAR in the x-axis in relative coordinates";
+            this->declare_parameter("x_diff", rclcpp::PARAMETER_DOUBLE, x_diff_descriptor);
 
-            auto lidar_installed_reversely_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            lidar_installed_reversely_descriptor.description = "Whether the rear LiDAR is installed in reverse";
-            this->declare_parameter("lidar_installed_reversely", true, lidar_installed_reversely_descriptor);
+            auto y_diff_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
+            y_diff_descriptor.description = "The distance between the second LiDAR and the first LiDAR in the y-axis in relative coordinates";
+            this->declare_parameter("y_diff", rclcpp::PARAMETER_DOUBLE, y_diff_descriptor);
 
-            auto lidar_scan_data_direction_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            lidar_scan_data_direction_descriptor.description = "The direction of scan data array that LiDAR returns. True is clockwise, False is counter-clockwise";
-            this->declare_parameter("lidar_scan_data_direction", true, lidar_scan_data_direction_descriptor);
-
-            auto x_diff_from_rear_lidar_to_front_lidar_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            x_diff_from_rear_lidar_to_front_lidar_descriptor.description = "The distance between the rear LiDAR and the front LiDAR in the x-axis";
-            this->declare_parameter("x_diff_from_rear_lidar_to_front_lidar", 0.49, x_diff_from_rear_lidar_to_front_lidar_descriptor);
-
-            auto y_diff_from_rear_lidar_to_front_lidar_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
-            y_diff_from_rear_lidar_to_front_lidar_descriptor.description = "The distance between the rear LiDAR and the front LiDAR in the y-axis";
-            this->declare_parameter("y_diff_from_rear_lidar_to_front_lidar", -0.73, y_diff_from_rear_lidar_to_front_lidar_descriptor);
-
-            int lidar_scan_data_direction = this->get_parameter("lidar_scan_data_direction").as_bool() ? 1 : -1;
-            int lidar_installed_reversely = this->get_parameter("lidar_installed_reversely").as_bool()? -1 : 1;
-            scan_data_direction_ = lidar_scan_data_direction * lidar_installed_reversely;
-
-            front_lidar_offset_ = this->get_parameter("front_lidar_offset").as_double();
-            rear_lidar_offset_ = this->get_parameter("rear_lidar_offset").as_double();
-            x_diff_from_rear_lidar_to_front_lidar_ = this->get_parameter("x_diff_from_rear_lidar_to_front_lidar").as_double();
-            y_diff_from_rear_lidar_to_front_lidar_ = this->get_parameter("y_diff_from_rear_lidar_to_front_lidar").as_double();
+            f_yaw_ = this->get_parameter("first_lidar_yaw").as_double();
+            s_yaw_ = this->get_parameter("second_lidar_yaw").as_double();
+            x_diff_ = this->get_parameter("x_diff").as_double();
+            y_diff_ = this->get_parameter("y_diff").as_double();
 
             scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", 10);
-            front_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-                "front_scan", 10, std::bind(&LidarMerger::front_scan_callback, this, std::placeholders::_1));
-            rear_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-                "rear_scan", 10, std::bind(&LidarMerger::rear_scan_callback, this, std::placeholders::_1)
+            first_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+                "first_scan", 10, std::bind(&LidarMerger::first_scan_callback, this, std::placeholders::_1));
+            second_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+                "second_scan", 10, std::bind(&LidarMerger::second_scan_callback, this, std::placeholders::_1)
             );
         }
+
     
     private:
         rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
-        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr front_scan_subscriber_;
-        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr rear_scan_subscriber_;
-        sensor_msgs::msg::LaserScan::SharedPtr front_scan_msg_;
-        int scan_data_direction_;
-        float front_lidar_offset_;
-        float rear_lidar_offset_;
-        float x_diff_from_rear_lidar_to_front_lidar_;
-        float y_diff_from_rear_lidar_to_front_lidar_;
+        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr first_scan_subscriber_;
+        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr second_scan_subscriber_;
+        sensor_msgs::msg::LaserScan::SharedPtr first_scan_msg_;
+        float f_yaw_;
+        float s_yaw_;
+        float x_diff_;
+        float y_diff_;
 
-        void front_scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr front_scan_msg)
+        void first_scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr first_scan_msg)
         {
-            front_scan_msg_ = front_scan_msg;
+            first_scan_msg_ = first_scan_msg;
         }
 
-        void rear_scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr rear_scan_msg)
+        void second_scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr second_scan_msg)
         {
-            if (!front_scan_msg_) {
+            if (!first_scan_msg_) {
                 return;
             }
 
-            int array_length = static_cast<int>(front_scan_msg_->ranges.size());
+            float f_min = first_scan_msg_->angle_min;
+            float f_max = first_scan_msg_->angle_max;
+            float f_length = static_cast<int>(second_scan_msg->ranges.size());
 
-            for (int front_object_index = 0; front_object_index < array_length; front_object_index++) {
-                if (front_scan_msg_->ranges[front_object_index] == std::numeric_limits<float>::infinity()) {
+            float s_min = second_scan_msg->angle_min;
+            float s_max = second_scan_msg->angle_max;
+            float s_length = static_cast<int>(second_scan_msg->ranges.size());
+
+            int s_new_length = s_length + s_length / std::abs(s_max - s_min) * (2.0 * M_PI - std::abs(s_max - s_min));
+
+            std::vector<float> s_new_ranges(s_new_length, std::numeric_limits<float>::infinity());
+            for (int i = 0; i < s_length; i++) {
+                s_new_ranges[i] = second_scan_msg->ranges[i];
+            }
+    
+            std::vector<float> s_new_intensities(s_new_length, 0.0);
+            for (int i = 0; i < s_length; i++) {
+                s_new_intensities[i] = second_scan_msg->intensities[i];
+            }
+
+            for (int f_index = 0; f_index < f_length; f_index++) {
+                if (std::isinf(first_scan_msg_->ranges[f_index])) {
                     continue;
                 }
 
-                float front_object_bearing_rad = (front_object_index / static_cast<float>(array_length)) * 2.0 * M_PI;
-                float front_object_math_angle = M_PI / 2 + scan_data_direction_ * front_object_bearing_rad;
-
-                float front_object_x_ = front_scan_msg_->ranges[front_object_index] * cos(front_object_math_angle + front_lidar_offset_);
-                float front_object_y_ = front_scan_msg_->ranges[front_object_index] * sin(front_object_math_angle + front_lidar_offset_);
-
-                float rear_object_x = front_object_x_ - x_diff_from_rear_lidar_to_front_lidar_;
-                float rear_object_y = front_object_y_ - y_diff_from_rear_lidar_to_front_lidar_;
-
-                float rear_object_math_angle = atan2(rear_object_y, rear_object_x);
-                float rear_object_bearing_rad = M_PI / 2 - rear_object_math_angle;
-                int rear_object_index = round((rear_object_bearing_rad + scan_data_direction_ * rear_lidar_offset_) / (2.0 * M_PI) * array_length);
-                float rear_object_distance = sqrt(pow(rear_object_x, 2) + pow(rear_object_y, 2));
-
-                if (rear_object_index < 0) {
-                    rear_object_index += array_length;
+                float f_angle;
+                if (f_max > f_min) {
+                    f_angle = M_PI / 2.0 + f_yaw_ + f_min + (f_max - f_min) * f_index / f_length;
+                } else {
+                    f_angle = M_PI / 2.0 + f_yaw_ + f_max + (f_min - f_max) * (f_length - f_index) / f_length;
                 }
 
-                if (rear_object_index >= array_length) {
-                    rear_object_index -= array_length;
+                float f_range = first_scan_msg_->ranges[f_index];
+                float s_x = f_range * std::cos(f_angle) - x_diff_;
+                float s_y = f_range * std::sin(f_angle) - y_diff_;
+
+                float s_angle = std::atan2(s_y, s_x);
+
+                int s_index;
+                if (s_max > s_min) {
+                    s_index = round((s_angle - (M_PI / 2.0 + s_yaw_ + s_min)) / (2.0 * M_PI) * s_new_length);
+                } else {
+                    s_index = round(s_new_length - ((M_PI / 2.0 + s_yaw_ + s_min + s_angle) / (2.0 * M_PI) * s_new_length));
+                }
+                float s_range = std::sqrt(s_x * s_x + s_y * s_y);
+
+                if (s_index > s_new_length) {
+                    s_index -= s_new_length;
+                } else if (s_index < 0) {
+                    s_index += s_new_length;
                 }
 
-                rear_scan_msg->ranges[rear_object_index] = rear_object_distance;
-                rear_scan_msg->intensities[rear_object_index] = front_scan_msg_->intensities[front_object_index];
-
+                s_new_ranges[s_index] = s_range;
+                s_new_intensities[s_index] = first_scan_msg_->intensities[f_index];
             }
 
-            scan_publisher_->publish(*rear_scan_msg);
+            second_scan_msg->ranges = s_new_ranges;
+            second_scan_msg->intensities = s_new_intensities;
+
+            scan_publisher_->publish(*second_scan_msg);
         }
 };
 
