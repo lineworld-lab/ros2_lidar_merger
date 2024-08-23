@@ -1,14 +1,24 @@
-# ros2_lidar_merge
+# ros2_lidar_merger
 
-<img width="80%" src="./media/rviz_snapshot.png" alt="rviz_snapshot.png" />
+<img src="./media/rviz_snapshot.png" alt="rviz_snapshot.png" />
 
-This ROS 2 package merges two LaserScan messages from two 2D LiDARs into a single LaserScan message. 
+This ROS2 C++ package merges the LaserScan messages from two 2D LiDARs into a single LaserScan message.
 
-The package has been tested on ROS 2 Humble.
+The package has been tested on ROS2 Humble.
 
 ## Requisites
 
-You need to have two LiDARs that are installed in same z direction (Both upward or both downward).
+Your LiDARs have to be installed in same z direction (Both upward or both downward).
+
+## Parameters
+<img width="60%" src="./media/parameter_explained.png" alt="parameter_explained.png" />
+
+The lidar merger node has the following parameters:
+
+- `first_lidar_yaw (required)`: The yaw angle of the first LiDAR relative to the robot's heading.
+- `second_lidar_yaw (required)`: The yaw angle of the second LiDAR relative to the robot's heading.
+- `x_diff (required)`: The distance between the second LiDAR and the first LiDAR in a coordinate system where the +y axis indicates the robot's heading.
+- `y_diff (required)`: The distance between the second LiDAR and the first LiDAR in a coordinate system where the +y axis indicates the robot's heading.
 
 
 ## Installation
@@ -50,18 +60,3 @@ Launch file example:
     output="screen"
 )
 ```
-
-
-## Parameters
-<img width="60%" src="./media/parameter_explained.png" alt="parameter_explained.png" />
-
-The lidar merger node has the following parameters:
-
-- `first_lidar_yaw`: The yaw angle of the first LiDAR relative to the robot's heading.
-- `second_lidar_yaw`: The yaw angle of the second LiDAR relative to the robot's heading.
-- `x_diff`: The distance between the second LiDAR and the first LiDAR in a coordinate system where the +y axis indicates the robot's heading.
-- `y_diff`: The distance between the second LiDAR and the first LiDAR in a coordinate system where the +y axis indicates the robot's heading.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).

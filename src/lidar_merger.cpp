@@ -9,19 +9,19 @@ class LidarMerger : public rclcpp::Node
         {
             auto first_lidar_yaw_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
             first_lidar_yaw_descriptor.description = "The yaw angle of the first LiDAR";
-            this->declare_parameter("first_lidar_yaw", -1.0/4.0 * M_PI, first_lidar_yaw_descriptor);
+            this->declare_parameter("first_lidar_yaw", rclcpp::PARAMETER_DOUBLE, first_lidar_yaw_descriptor);
 
             auto second_lidar_yaw_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
             second_lidar_yaw_descriptor.description = "The yaw angle of the second LiDAR";
-            this->declare_parameter("second_lidar_yaw", 3.0/4.0 * M_PI, second_lidar_yaw_descriptor);
+            this->declare_parameter("second_lidar_yaw", rclcpp::PARAMETER_DOUBLE, second_lidar_yaw_descriptor);
 
             auto x_diff_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
             x_diff_descriptor.description = "The distance between the second LiDAR and the first LiDAR in the x-axis in relative coordinates";
-            this->declare_parameter("x_diff", -0.49, x_diff_descriptor);
+            this->declare_parameter("x_diff", rclcpp::PARAMETER_DOUBLE, x_diff_descriptor);
 
             auto y_diff_descriptor = rcl_interfaces::msg::ParameterDescriptor{};
             y_diff_descriptor.description = "The distance between the second LiDAR and the first LiDAR in the y-axis in relative coordinates";
-            this->declare_parameter("y_diff", -0.74, y_diff_descriptor);
+            this->declare_parameter("y_diff", rclcpp::PARAMETER_DOUBLE, y_diff_descriptor);
 
             f_yaw_ = this->get_parameter("first_lidar_yaw").as_double();
             s_yaw_ = this->get_parameter("second_lidar_yaw").as_double();
