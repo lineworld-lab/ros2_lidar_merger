@@ -60,7 +60,7 @@ class LidarMerger : public rclcpp::Node
 
             float f_min = first_scan_msg_->angle_min;
             float f_max = first_scan_msg_->angle_max;
-            float f_length = static_cast<int>(second_scan_msg->ranges.size());
+            float f_length = static_cast<int>(first_scan_msg->ranges.size());
 
             float s_min = second_scan_msg->angle_min;
             float s_max = second_scan_msg->angle_max;
