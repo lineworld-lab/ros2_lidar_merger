@@ -125,6 +125,49 @@ class LidarMerger : public rclcpp::Node
                 second_scan_msg->angle_increment = 2.0 * M_PI / s_new_ranges.size();
             }
 
+            // The slam_toolbox package works wrong when the absolute values of 
+            // max/min_angle is not equal. So we need to make them equal.
+            float new_max = second_scan_msg->angle_max;
+            float new_min = second_scan_msg->angle_min;
+            if (new_max > new_min && std::abs(new_max) > std::abs(new_min)) {
+                float rad_diff = (std::abs(new_max) - std::abs(new_min)) / 2.0;
+                int idx_diff = s_new_length * rad_diff / (2.0 * M_PI);
+                for (int i = 0; i < s_new_length; i++) {
+                    second_scan_msg->ranges[i] = s_new_ranges[(i - idx_diff + s_new_length) % s_new_length];
+                    second_scan_msg->intensities[i] = s_new_intensities[(i - idx_diff + s_new_length) % s_new_length];
+                }
+                second_scan_msg->angle_min -= rad_diff;
+                second_scan_msg->angle_max -= rad_diff;
+            } else if (new_max < new_min && std::abs(new_max) < std::abs(new_min)) {
+                float rad_diff = (std::abs(new_min) - std::abs(new_max)) / 2.0;
+                int idx_diff = s_new_length * rad_diff / (2.0 * M_PI);
+                for (int i = 0; i < s_new_length; i++) {
+                    second_scan_msg->ranges[i] = s_new_ranges[(i + idx_diff) % s_new_length];
+                    second_scan_msg->intensities[i] = s_new_intensities[(i + idx_diff) % s_new_length];
+                }
+                second_scan_msg->angle_min += rad_diff;
+                second_scan_msg->angle_max += rad_diff;
+            } else if (new_max < new_min && std::abs(new_max) > std::abs(new_min)) {
+                float rad_diff = (std::abs(new_max) - std::abs(new_min)) / 2.0;
+                int idx_diff = s_new_length * rad_diff / (2.0 * M_PI);
+                for (int i = 0; i < s_new_length; i++) {
+                    second_scan_msg->ranges[i] = s_new_ranges[(i + idx_diff) % s_new_length];
+                    second_scan_msg->intensities[i] = s_new_intensities[(i + idx_diff) % s_new_length];
+                }
+                second_scan_msg->angle_min -= rad_diff;
+                second_scan_msg->angle_max -= rad_diff;
+            } else if (new_max < new_min && std::abs(new_max) < std::abs(new_min)) {
+                float rad_diff = (std::abs(new_min) - std::abs(new_max)) / 2.0;
+                int idx_diff = s_new_length * rad_diff / (2.0 * M_PI);
+                for (int i = 0; i < s_new_length; i++) {
+                    second_scan_msg->ranges[i] = s_new_ranges[(i - idx_diff + s_new_length) % s_new_length];
+                    second_scan_msg->intensities[i] = s_new_intensities[(i - idx_diff + s_new_length) % s_new_length];
+                }
+                second_scan_msg->angle_min += rad_diff;
+                second_scan_msg->angle_max += rad_diff;
+            }
+
+
             scan_publisher_->publish(*second_scan_msg);
         }
 };
