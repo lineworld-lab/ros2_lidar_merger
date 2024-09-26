@@ -117,6 +117,14 @@ class LidarMerger : public rclcpp::Node
             second_scan_msg->ranges = s_new_ranges;
             second_scan_msg->intensities = s_new_intensities;
 
+            if (s_max > s_min) {
+                second_scan_msg->angle_max = second_scan_msg->angle_min + 2.0 * M_PI;
+                second_scan_msg->angle_increment = 2.0 * M_PI / s_new_ranges.size();
+            } else if (s_max < s_min) {
+                second_scan_msg->angle_max = second_scan_msg->angle_min - 2.0 * M_PI;
+                second_scan_msg->angle_increment = 2.0 * M_PI / s_new_ranges.size();
+            }
+
             scan_publisher_->publish(*second_scan_msg);
         }
 };
